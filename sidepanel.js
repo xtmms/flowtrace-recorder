@@ -290,27 +290,36 @@ document.addEventListener('DOMContentLoaded', () => {
   // UI Event Listeners
   btnStart.addEventListener('click', () => {
     chrome.storage.local.set({ isRecording: true }, () => {
-      // Assicura l'aggiunta dell'assertion page sulla tab attiva quando si avvia una registrazione ex novo
-      queryActiveTab((activeTab) => {
-        if (!activeTab || !activeTab.id || !activeTab.url) return;
-        if (!activeTab.url.startsWith('http://') && !activeTab.url.startsWith('https://') && !activeTab.url.startsWith('file://')) {
+      // Se ci sono già eventi registrati (ripresa da stop), non aggiungere l'assertion page
+      getEventsOrder((order) => {
+        if (order && order.length > 0) {
           return;
         }
 
-        chrome.tabs.sendMessage(activeTab.id, { action: 'ensureLandingAssertion' }, (response) => {
-          if (chrome.runtime.lastError || !response || !response.success) {
-            // Se il content script non era ancora iniettato nella tab attiva, lo iniettiamo e riproviamo
-            if (chrome.scripting && chrome.scripting.executeScript) {
-              chrome.scripting.executeScript({
-                target: { tabId: activeTab.id, allFrames: false },
-                files: ['storage-delta.js', 'content.js']
-              }).then(() => {
-                setTimeout(() => {
-                  chrome.tabs.sendMessage(activeTab.id, { action: 'ensureLandingAssertion' }).catch(() => {});
-                }, 100);
-              }).catch((err) => console.log('Script injection error:', err));
-            }
+        // Assicura l'aggiunta dell'assertion page sulla tab attiva SOLO quando si avvia una registrazione ex novo
+        queryActiveTab((activeTab) => {
+          if (!activeTab || !activeTab.id || !activeTab.url) return;
+          if (!activeTab.url.startsWith('http://') && !activeTab.url.startsWith('https://') && !activeTab.url.startsWith('file://')) {
+            return;
           }
+
+          chrome.tabs.sendMessage(activeTab.id, { action: 'ensureLandingAssertion' }, { frameId: 0 }, (response) => {
+            if (chrome.runtime.lastError || !response || !response.success) {
+              // Se il content script non era ancora iniettato nella tab attiva, lo iniettiamo e riproviamo
+              if (chrome.scripting && chrome.scripting.executeScript) {
+                chrome.scripting.executeScript({
+                  target: { tabId: activeTab.id, allFrames: false },
+                  files: ['storage-delta.js', 'content.js']
+                }).then(() => {
+                  setTimeout(() => {
+                    chrome.tabs.sendMessage(activeTab.id, { action: 'ensureLandingAssertion' }, { frameId: 0 }, () => {
+                      if (chrome.runtime.lastError) {}
+                    });
+                  }, 150);
+                }).catch((err) => console.log('Script injection error:', err));
+              }
+            }
+          });
         });
       });
     });

@@ -9,7 +9,13 @@
 // popup, iframe embedded scrivono gli stessi valori).
 // NB: gli screenshot usano gia' il pattern `screenshot_{ts}`: invariato.
 
-let deltaSchemaReady = false;
+(function (global) {
+  if (global.__flowtrace_delta_ready) {
+    return;
+  }
+  global.__flowtrace_delta_ready = true;
+
+  var deltaSchemaReady = false;
 
 // Migrazione unica legacy -> v2. Idempotente: se due contesti migrano in
 // parallelo scrivono chiavi identiche e la remove di `recordedEvents` non
@@ -136,3 +142,10 @@ function replaceAllEvents(events, extraWrites, cb, keepStaleKeys) {
     });
   });
 }
+
+  global.ensureDeltaSchema = ensureDeltaSchema;
+  global.getEventsOrder = getEventsOrder;
+  global.loadEventsInOrder = loadEventsInOrder;
+  global.appendDeltaEvent = appendDeltaEvent;
+  global.replaceAllEvents = replaceAllEvents;
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

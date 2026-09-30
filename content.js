@@ -1,17 +1,32 @@
-// Variabili globali per gestire lo stato e gli elementi UI
-// Global state variables for recording and assertion tracking
-let isRecording = false;
-let assertionTextMode = false;
-let assertionVisibleMode = false;
-let assertionEnabledMode = false;
-let assertionDisableMode = false;
-let assertionColorMode = false;
-let isBypassClick = false;
-let highlightBox = null;
-let highlightLabel = null;
-let highlightDot = null;
-let highlightTextNode = null;
-let scrollTimeout = null;
+(function (global) {
+  if (global.__flowtrace_content_script_loaded) {
+    return;
+  }
+  global.__flowtrace_content_script_loaded = true;
+
+  // Variabili globali per gestire lo stato e gli elementi UI
+  // Global state variables for recording and assertion tracking
+  let isRecording = false;
+  let assertionTextMode = false;
+  let assertionVisibleMode = false;
+  let assertionEnabledMode = false;
+  let assertionDisableMode = false;
+  let assertionColorMode = false;
+  let isBypassClick = false;
+  let highlightBox = null;
+  let highlightLabel = null;
+  let highlightDot = null;
+  let highlightTextNode = null;
+  let scrollTimeout = null;
+  let isLandingAssertionInFlight = false;
+  let lastKnownUrl = window.location.href;
+  let activeListenersAttached = false;
+  let lastHighlightedElement = null;
+  let highlightRaf = null;
+  let lastMouseMoveTime = 0;
+  let lastHighlightWidth = 0;
+  let lastHighlightHeight = 0;
+  let lastHighlightTransform = '';
 
 // In-memory cache of events (full objects) to avoid a storage round-trip
 // before every single write. With the delta schema (storage-delta.js) the
@@ -74,11 +89,10 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     
     if (isRecording && !wasRecording) {
       if (window.self === window.top && !document.hidden) {
-        // Check if events list is empty (new recording session) or current URL not yet asserted
+        // Se la lista eventi è vuota (nuova sessione ex novo), aggiunge landing assertion.
+        // Se ci sono già eventi registrati (ripresa da stop), non aggiunge nessuna assertion page.
         getCachedEvents((events) => {
-          const lastPageAssertion = events.slice().reverse().find(e => e.action === 'assertion' && (e.type === 'page' || e.condition === 'landing'));
-          const lastUrl = lastPageAssertion ? lastPageAssertion.url : null;
-          if (events.length === 0 || lastUrl !== window.location.href) {
+          if (events.length === 0) {
             addLandingAssertion();
           }
         });
@@ -737,8 +751,6 @@ function recordEvent(actionType, targetElement, value = null, callback = null) {
   });
 }
 
-let isLandingAssertionInFlight = false;
-
 // Landing page assertion
 function addLandingAssertion() {
   if (window.self !== window.top) return;
@@ -749,10 +761,9 @@ function addLandingAssertion() {
 
   // Deduplicazione preventiva per evitare doppi scatti sullo stesso URL
   getCachedEvents((events) => {
-    const lastEvent = events[events.length - 1];
-    if (lastEvent && lastEvent.action === 'assertion' && 
-        (lastEvent.type === 'page' || lastEvent.condition === 'landing') && 
-        lastEvent.url === url) {
+    const lastPageAssertion = events.slice().reverse().find(e => e.action === 'assertion' && 
+        (e.type === 'page' || e.condition === 'landing'));
+    if (lastPageAssertion && lastPageAssertion.url === url) {
       return;
     }
 
@@ -817,8 +828,6 @@ function addLandingAssertion() {
 }
 
 // SPA and Redirection URL detection
-let lastKnownUrl = window.location.href;
-
 function checkUrlChange() {
   if (window.self !== window.top) return;
   if (window.location.href !== lastKnownUrl) {
@@ -864,8 +873,6 @@ setInterval(() => {
 // Listener di registrazione/assertion attaccati SOLO quando servono
 // (isRecording o un assertion mode attivo): evitano lavoro in ogni frame
 // di ogni tab anche da fermi.
-let activeListenersAttached = false;
-
 function syncActiveListeners() {
   const shouldAttach = isRecording || isAssertionActive();
   if (shouldAttach === activeListenersAttached) return;
@@ -1268,13 +1275,6 @@ function highlightElement(el, color = 'red') {
   }
 }
 
-let lastHighlightedElement = null;
-let highlightRaf = null;
-let lastMouseMoveTime = 0;
-let lastHighlightWidth = 0;
-let lastHighlightHeight = 0;
-let lastHighlightTransform = '';
-
 function handleDocumentMouseMove(event) {
   const now = Date.now();
   if (now - lastMouseMoveTime < 40) return; // ~25fps throttle
@@ -1546,11 +1546,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true, url: window.location.href, title: document.title });
   } else if (request.action === 'ensureLandingAssertion') {
     if (window.self === window.top) {
-      addLandingAssertion();
+      getCachedEvents((events) => {
+        if (events.length === 0) {
+          addLandingAssertion();
+        }
+      });
       sendResponse({ success: true });
-    } else {
-      sendResponse({ success: false, reason: 'not-top-frame' });
     }
+    // Gli iframe non rispondono, evitando di anticipare la risposta del top frame
   }
   return true;
 });
+
+  // Export helpers for unit tests and window context
+  global.getXPath = getXPath;
+  global.isUnique = isUnique;
+  global.showToast = showToast;
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
