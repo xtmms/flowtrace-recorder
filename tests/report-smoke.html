@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>F5 Report Smoke Test</title>
+</head>
+<body>
+  <div id="results">RUNNING...</div>
+  <script src="../sidepanel-report.js"></script>
+  <script>
+    (async function () {
+      const out = [];
+      let failures = 0;
+      function assert(cond, msg) {
+        if (!cond) { failures++; out.push('FAIL: ' + msg); }
+        else out.push('ok: ' + msg);
+      }
+
+      function makeCanvas(w, h) {
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#123456';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 20; i++) {
+          ctx.fillRect(Math.random() * w, Math.random() * h, 40, 40);
+        }
+        return c;
+      }
+
+      // ---- downscaleScreenshot: 2000x1000 PNG -> JPEG max 1280 q50 ----
+      const bigPng = makeCanvas(2000, 1000).toDataURL('image/png');
+      const small = await downscaleScreenshot(bigPng);
+      assert(small.startsWith('data:image/jpeg'), 'downscale: output JPEG');
+      assert(small.length < bigPng.length, 'downscale: dimensione ridotta (' + small.length + ' < ' + bigPng.length + ')');
+      const dims = await new Promise(res => {
+        const img = new Image();
+        img.onload = () => res({ w: img.width, h: img.height });
+        img.src = small;
+      });
+      assert(dims.w === 1280 && dims.h === 640, 'downscale: 2000x1000 -> 1280x640 (atteso ' + dims.w + 'x' + dims.h + ')');
+      assert(!/fonts\.googleapis/.test(small), 'downscale: nessun font esterno');
+
+      // ---- generateHtmlReport: eventi con screenshot ----
+      const shotPng = makeCanvas(800, 400).toDataURL('image/png');
+      const events = [];
+      for (let i = 0; i < 5; i++) {
+        events.push({
+          action: i % 2 === 0 ? 'click' : 'input',
+          type: i % 2 === 0 ? 'button' : 'text',
+          locator: "//*[@id='el" + i + "']",
+          url: 'https://example.com/page' + i,
+          timestamp: new Date(2026, 8, 3, 10, i).toISOString(),
+          labelText: 'Elemento ' + i,
+          value: i % 2 === 0 ? undefined : 'valore ' + i,
+          screenshot: shotPng
+        });
+      }
+      events.push({ action: 'assertion', type: 'page', condition: 'landing', title: 'Pagina', url: 'https://example.com', timestamp: new Date(2026, 8, 3, 10, 5).toISOString() });
+
+      // Come in popup.js: il downscale avviene PRIMA del report
+      const reportEvents = [];
+      for (const e of events) {
+        if (e.screenshot) {
+          reportEvents.push({ ...e, screenshot: await downscaleScreenshot(e.screenshot) });
+        } else {
+          reportEvents.push(e);
+        }
+      }
+
+      const report = await generateHtmlReport(reportEvents, 'Test Session');
+      assert(typeof report === 'string' && report.length > 1000, 'report: generato (' + report.length + ' byte)');
+      assert(!report.includes('fonts.googleapis'), 'report: nessun Google Fonts');
+      assert(report.includes('data:image/jpeg'), 'report: screenshot JPEG incorporato');
+
+      const m = report.match(/<script id="rawStepsData" type="application\/json">([\s\S]*?)<\/script>/);
+      assert(!!m, 'report: rawStepsData presente');
+      const parsed = JSON.parse(m[1]);
+      assert(Array.isArray(parsed) && parsed.length === 6, 'report: rawStepsData parsa con 6 step');
+      assert(parsed[0].screenshot.startsWith('data:image/jpeg'), 'report: screenshot dello step e\' JPEG downscalato');
+      assert(parsed[0].xpath === "//*[@id='el0']", 'report: xpath preservato');
+
+      const txt = out.join('\n') + '\n\nRisultato: ' + (failures === 0 ? 'TUTTI PASSANO' : failures + ' FAIL');
+      document.getElementById('results').textContent = txt;
+      document.title = 'Risultato: ' + (failures === 0 ? 'PASS' : 'FAIL');
+    })();
+  </script>
+</body>
+</html>

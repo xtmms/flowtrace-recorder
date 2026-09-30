@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Agent Context (local dev aid only - not part of the shared repo)
+.agent/
+AGENT.md
+
+# Logs
+*.log
+
+# Build artifacts
+dist/

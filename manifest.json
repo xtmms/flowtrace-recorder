@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "FlowTrace Recorder",
+  "version": "2.0.0",
+  "description": "Native Chrome Side Panel for recording web interactions, assertions, and automated test flows.",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "tabs",
+    "scripting",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_title": "Open FlowTrace Recorder",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["storage-delta.js", "content.js"],
+      "all_frames": true
+    }
+  ]
+}

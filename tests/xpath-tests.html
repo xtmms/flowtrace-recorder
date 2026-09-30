@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>FlowTrace Recorder — Golden Test XPath</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 24px; background: #f8fafc; color: #1e293b; }
+    h1 { font-size: 18px; margin-bottom: 4px; }
+    p { font-size: 12px; color: #475569; margin: 4px 0; }
+    #summary { font-weight: 700; margin: 12px 0; font-size: 14px; }
+    table { border-collapse: collapse; width: 100%; background: #fff; }
+    th, td { border: 1px solid #e2e8f0; padding: 6px 10px; font-size: 12px; text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; }
+    td code { font-family: Consolas, Monaco, monospace; font-size: 11px; word-break: break-all; }
+    .pass { color: #10b981; font-weight: 700; }
+    .fail { color: #f43f5e; font-weight: 700; }
+    #fixtures { display: none; }
+    #snapshotOutput { display: none; width: 100%; height: 300px; font-family: Consolas, monospace; font-size: 11px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>FlowTrace Recorder — Golden Test XPath</h1>
+  <p>Baseline di regressione per il generatore XPath: verifica output atteso, univocita' e round-trip su fixture fisse.</p>
+  <p>Aprire nel browser oppure: <code>chrome --headless=new --disable-gpu --virtual-time-budget=5000 --dump-dom tests/xpath-tests.html</code></p>
+  <p><code>?snapshot=1</code> rigenera i valori attesi (solo dopo verifica manuale di univocita'/round-trip).</p>
+  <div id="summary">In esecuzione...</div>
+  <table id="results">
+    <thead><tr><th>Test</th><th>Atteso</th><th>Attuale</th><th>Univoco</th><th>Round-trip</th><th>Esito</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <textarea id="snapshotOutput" readonly></textarea>
+
+  <div id="fixtures">
+    <div data-testid="user-menu"><button data-testid="logout-btn">Logout</button></div>
+
+    <form id="login-form">
+      <label for="username">Username</label>
+      <input type="text" id="username">
+      <label for="password">Password</label>
+      <input type="password" id="password">
+      <button type="submit">Accedi</button>
+    </form>
+
+    <label for="u3">USERNAME</label>
+    <input type="text" id="u3" aria-label="Username">
+
+    <div role="tab" aria-label="Dashboard" class="tab"><span>Panoramica</span></div>
+
+    <div class="row">
+      <button class="btn">Azione</button>
+      <button class="btn">Azione</button>
+    </div>
+
+    <div class="container">
+      <div class="panel">
+        <div class="box">Contenuto</div>
+        <div class="box">Contenuto</div>
+      </div>
+    </div>
+
+    <table id="tabella">
+      <tbody>
+        <tr><td>Mario</td><td>Verde</td></tr>
+        <tr><td>Mario</td><td>Blu</td></tr>
+      </tbody>
+    </table>
+
+    <input type="text" placeholder="Cerca..." id="search-field">
+
+    <button id="save-btn"><span>Salva</span></button>
+
+    <ul id="menu-list"><li>Home</li><li>Chi siamo</li></ul>
+
+    <button data-nrt-test="esc">L'ordine</button>
+
+    <div role="option" aria-selected="true">Opzione 1</div>
+    <div role="option" aria-selected="true">Opzione 2</div>
+
+    <button id="abc1234567">Pulsante</button>
+  </div>
+
+  <script>
+    // Stub minimale di chrome.* per caricare content.js fuori dall'estensione
+    window.chrome = (function () {
+      const data = {};
+      const listeners = [];
+      function get(keys, cb) {
+        const out = {};
+        const arr = typeof keys === 'string'
+          ? [keys]
+          : (Array.isArray(keys) ? keys : (keys === null ? Object.keys(data) : Object.keys(keys)));
+        for (const k of arr) if (k in data) out[k] = data[k];
+        cb(out);
+      }
+      function set(obj, cb) { Object.assign(data, obj); if (cb) cb(); }
+      function remove(keys, cb) {
+        const arr = Array.isArray(keys) ? keys : [keys];
+        arr.forEach(k => { delete data[k]; });
+        if (cb) cb();
+      }
+      return {
+        storage: {
+          local: { get: get, set: set, remove: remove },
+          onChanged: { addListener: function (fn) { listeners.push(fn); } }
+        },
+        runtime: {
+          onMessage: { addListener: function () {} },
+          sendMessage: function (msg, cb) { if (cb) cb({ success: false, error: 'stub' }); }
+        }
+      };
+    })();
+  </script>
+
+  <script src="../storage-delta.js"></script>
+  <script src="../content.js"></script>
+
+  <script>
+    (function () {
+      const tests = [
+        { name: 'data-testid button', getEl: () => document.querySelector('[data-testid="logout-btn"]'), expected: "//*[@data-testid='logout-btn']" },
+        { name: 'input con label (for/id)', getEl: () => document.getElementById('username'), expected: "//input[@id = //label[normalize-space(.)='Username']/@for]" },
+        { name: 'input label case-insensitive (id fallback)', getEl: () => document.getElementById('u3'), expected: "//*[@id='u3']" },
+        { name: 'bottone submit per testo', getEl: () => document.querySelector('#login-form button'), expected: "//button[normalize-space(.)='Accedi']" },
+        { name: 'ARIA role + label', getEl: () => document.querySelector('[role="tab"]'), expected: "//*[@role='tab' and @aria-label='Dashboard']" },
+        { name: 'bottone duplicato 1 (strutturale)', getEl: () => document.querySelectorAll('.row .btn')[0], expected: "//div[contains(@class, 'row')]/button[1]" },
+        { name: 'bottone duplicato 2 (strutturale)', getEl: () => document.querySelectorAll('.row .btn')[1], expected: "//div[contains(@class, 'row')]/button[2]" },
+        { name: 'box duplicato 1 (strutturale)', getEl: () => document.querySelectorAll('.panel .box')[0], expected: "//div[contains(@class, 'panel')]/div[1]" },
+        { name: 'box duplicato 2 (strutturale)', getEl: () => document.querySelectorAll('.panel .box')[1], expected: "//div[contains(@class, 'panel')]/div[2]" },
+        { name: 'cella tabella riga 1 (id antenna)', getEl: () => document.querySelectorAll('#tabella tr')[0].children[0], expected: "//*[@id='tabella']/tbody/tr[1]/td[1]" },
+        { name: 'cella tabella riga 2 (id antenna)', getEl: () => document.querySelectorAll('#tabella tr')[1].children[0], expected: "//*[@id='tabella']/tbody/tr[2]/td[1]" },
+        { name: 'input placeholder con id stabile', getEl: () => document.getElementById('search-field'), expected: "//*[@id='search-field']" },
+        { name: 'span promosso a bottone (id)', getEl: () => document.querySelector('#save-btn span'), getExpectedTarget: () => document.getElementById('save-btn'), expected: "//*[@id='save-btn']" },
+        { name: 'li per testo', getEl: () => document.querySelectorAll('#menu-list li')[1], expected: "//li[normalize-space(.)='Chi siamo']" },
+        { name: 'bottone con apostrofo', getEl: () => document.querySelector('[data-nrt-test="esc"]'), expected: "//button[normalize-space(.)=\"L'ordine\"]" },
+        { name: 'ARIA state (testo)', getEl: () => document.querySelectorAll('[role="option"]')[1], expected: "//*[@role='option' and normalize-space(.)='Opzione 2']" },
+        { name: 'id instabile -> testo', getEl: () => document.getElementById('abc1234567'), expected: "//button[normalize-space(.)='Pulsante']" }
+      ];
+
+      function firstMatch(xpath) {
+        try {
+          const r = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+          return r.singleNodeValue;
+        } catch (e) { return null; }
+      }
+
+      const snapshotMode = /snapshot/.test(location.search);
+      const snapshotLines = [];
+      let pass = 0, fail = 0;
+      const tbody = document.querySelector('#results tbody');
+
+      for (const t of tests) {
+        const el = t.getEl();
+        const target = t.getExpectedTarget ? t.getExpectedTarget() : el;
+        const actual = getXPath(el);
+        const unique = isUnique(actual, target);
+        const roundTrip = firstMatch(actual) === target;
+        const ok = actual === t.expected && unique && roundTrip;
+        pass += ok ? 1 : 0;
+        fail += ok ? 0 : 1;
+        if (snapshotMode) {
+          snapshotLines.push('      { name: ' + JSON.stringify(t.name) + ', getEl: ' + t.getEl.toString() + ', expected: ' + JSON.stringify(actual) + ' },');
+        }
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + t.name + '</td>' +
+          '<td><code>' + t.expected + '</code></td>' +
+          '<td><code>' + actual + '</code></td>' +
+          '<td>' + (unique ? 'S' : 'NO') + '</td>' +
+          '<td>' + (roundTrip ? 'S' : 'NO') + '</td>' +
+          '<td class="' + (ok ? 'pass' : 'fail') + '">' + (ok ? 'PASS' : 'FAIL') + '</td>';
+        tbody.appendChild(tr);
+      }
+
+      document.getElementById('summary').textContent =
+        'Risultato: ' + pass + ' PASS / ' + fail + ' FAIL';
+      if (snapshotMode) {
+        const ta = document.getElementById('snapshotOutput');
+        ta.style.display = 'block';
+        ta.value = snapshotLines.join('\n');
+      }
+    })();
+  </script>
+</body>
+</html>
