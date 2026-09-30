@@ -196,6 +196,7 @@ flowtrace-recorder/
 ├── tests/                     # Suite di test automatizzati per XPath e Report
 │   ├── xpath-tests.html       # Golden test per l'algoritmo di calcolo XPath
 │   └── report-smoke.html      # Smoke test per generazione report e downscaler
+├── LICENSE                    # Contratto di licenza proprietaria e tutela della proprietà intellettuale
 ├── README.md                  # Documentazione completa del progetto
 └── .gitignore                 # Regole complete di esclusione file
 ```
@@ -276,6 +277,13 @@ Clicca sul pulsante <b>Carica Archivio ZIP o JSON</b> (icona freccia in su nella
 
 ---
 
-## 📄 Licenza
+## 📄 Licenza e Proprietà Intellettuale
 
-Proprietario / FlowTrace Team. Tutti i diritti riservati.
+Questo progetto è distribuito sotto **Licenza Proprietaria e Riservata** (Proprietary & Confidential Software License Agreement).
+
+Copyright &copy; 2026 **Tommaso Ianniciello**. Tutti i diritti riservati.
+
+* **Tutela del codice e del marchio**: È severamente vietata la riproduzione, copia, alterazione, reverse engineering, decompilazione o ridistribuzione non autorizzata, in tutto o in parte, del codice sorgente, dei binari, della grafica e delle logiche architetturali.
+* **Uso per i tester manuali**: Ai tester e revisori autorizzati è concesso esclusivamente il diritto limitato e revocabile di installazione ed esecuzione dell'estensione per fini di collaudo e validazione, senza alcun diritto di diffusione a terzi o commercializzazione.
+* Per il testo contrattuale completo, consulta il file [`LICENSE`](LICENSE).
+

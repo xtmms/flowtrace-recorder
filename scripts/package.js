@@ -97,7 +97,8 @@ const REQUIRED_FILES = [
   'jszip.min.js',
   'icons/icon16.png',
   'icons/icon48.png',
-  'icons/icon128.png'
+  'icons/icon128.png',
+  'LICENSE'
 ];
 
 // File JavaScript da validare sintatticamente

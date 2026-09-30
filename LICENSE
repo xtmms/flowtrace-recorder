@@ -1,0 +1,59 @@
+PROPRIETARY AND CONFIDENTIAL SOFTWARE LICENSE AGREEMENT
+================================================================================
+Copyright (c) 2026 Tommaso Ianniciello. All rights reserved.
+Project: FlowTrace Recorder
+
+IMPORTANT: PLEASE READ THIS LICENSE AGREEMENT CAREFULLY BEFORE USING,
+COPYING, OR DISTRIBUTING THIS SOFTWARE.
+
+1. PROPRIETARY RIGHTS AND OWNERSHIP
+This software, including all source code, object code, documentation, graphics,
+user interfaces, architecture, algorithms, and associated media (collectively,
+the "Software"), is the exclusive intellectual property and proprietary trade
+secret of Tommaso Ianniciello (the "Author"). The Software is protected by
+applicable copyright laws, intellectual property treaties, and international
+trade secret regulations.
+
+2. RESTRICTIONS ON USE AND DISTRIBUTION
+Except as expressly authorized in writing by the Author:
+  a. You may NOT copy, reproduce, republish, distribute, broadcast, transmit,
+     sublicense, lease, rent, or otherwise make available the Software, or any
+     portion thereof, to any third party.
+  b. You may NOT modify, adapt, translate, reverse engineer, decompile,
+     disassemble, or attempt to derive the source code, structure, or underlying
+     ideas of the Software.
+  c. You may NOT create derivative works, competitive products, or software
+     incorporating any part of this Software.
+  d. You may NOT remove, alter, or obscure any copyright notices, trademarks,
+     or proprietary legends contained within or displayed by the Software.
+  e. Commercial exploitation, sale, bundling, or monetization of the Software
+     without a separate commercial agreement signed by the Author is strictly
+     prohibited.
+
+3. EVALUATION AND TESTING PERMIT
+If you have received this Software as an authorized manual tester, reviewer, or
+evaluator, you are granted a limited, personal, revocable, non-exclusive, and
+non-transferable license solely to execute the Software in its unmodified form
+for testing, demonstration, and evaluation purposes. You may not retain, share,
+or redistribute the Software once the evaluation period concludes.
+
+4. DISCLAIMER OF WARRANTIES
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. IN NO EVENT SHALL
+THE AUTHOR OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, LOSS OF DATA,
+LOSS OF PROFITS, WORK STOPPAGE, SYSTEM FAILURE, OR OTHER LIABILITY, WHETHER IN
+AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+5. GOVERNING LAW AND JURISDICTION
+This Agreement shall be governed by and construed in accordance with the laws of
+Italy and European Union Intellectual Property Directives, without regard to its
+conflict of law provisions. Any dispute arising out of or in connection with
+this Agreement shall be subject to the exclusive jurisdiction of the competent
+courts of Italy.
+
+================================================================================
+For licensing inquiries, commercial permissions, or partnership requests,
+contact: ianniciello00@gmail.com
+================================================================================
