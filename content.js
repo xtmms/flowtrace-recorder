@@ -50,7 +50,7 @@ chrome.storage.local.get(['isRecording', 'assertionMode'], (result) => {
   updateAssertionModes(result.assertionMode || null);
   syncActiveListeners();
   
-  if (isRecording) {
+  if (isRecording && window.self === window.top) {
     // Check if the current URL is different from the last page assertion URL in storage
     getCachedEvents((events) => {
       const lastPageAssertion = events.slice().reverse().find(e => e.action === 'assertion' && (e.type === 'page' || e.condition === 'landing'));
@@ -73,12 +73,16 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     updateFloatingPanelStatus(isRecording);
     
     if (isRecording && !wasRecording) {
-      // Check if events list is empty (new recording session)
-      getCachedEvents((events) => {
-        if (events.length === 0) {
-          addLandingAssertion();
-        }
-      });
+      if (window.self === window.top && !document.hidden) {
+        // Check if events list is empty (new recording session) or current URL not yet asserted
+        getCachedEvents((events) => {
+          const lastPageAssertion = events.slice().reverse().find(e => e.action === 'assertion' && (e.type === 'page' || e.condition === 'landing'));
+          const lastUrl = lastPageAssertion ? lastPageAssertion.url : null;
+          if (events.length === 0 || lastUrl !== window.location.href) {
+            addLandingAssertion();
+          }
+        });
+      }
     } else if (!isRecording) {
       updateAssertionModes(null);
     }
@@ -733,70 +737,90 @@ function recordEvent(actionType, targetElement, value = null, callback = null) {
   });
 }
 
+let isLandingAssertionInFlight = false;
+
 // Landing page assertion
 function addLandingAssertion() {
+  if (window.self !== window.top) return;
+  if (isLandingAssertionInFlight) return;
+
   const url = window.location.href;
-  const title = (document.title || 'Senza Titolo').replace(/\s+/g, ' ').trim();
-  const timestamp = new Date().toISOString();
-  
-  // Extract metadata
-  const metadata = {};
-  const descriptionMeta = document.querySelector('meta[name="description"]');
-  if (descriptionMeta) {
-    const val = descriptionMeta.getAttribute('content');
-    if (val) metadata.description = val.replace(/\s+/g, ' ').trim();
-  }
-  
-  const keywordsMeta = document.querySelector('meta[name="keywords"]');
-  if (keywordsMeta) {
-    const val = keywordsMeta.getAttribute('content');
-    if (val) metadata.keywords = val.replace(/\s+/g, ' ').trim();
-  }
-  
-  const ogTitleMeta = document.querySelector('meta[property="og:title"]');
-  if (ogTitleMeta) {
-    const val = ogTitleMeta.getAttribute('content');
-    if (val) metadata.ogTitle = val.replace(/\s+/g, ' ').trim();
-  }
-  
-  const ogDescMeta = document.querySelector('meta[property="og:description"]');
-  if (ogDescMeta) {
-    const val = ogDescMeta.getAttribute('content');
-    if (val) metadata.ogDescription = val.replace(/\s+/g, ' ').trim();
-  }
-  
-  const ogUrlMeta = document.querySelector('meta[property="og:url"]');
-  if (ogUrlMeta) {
-    const val = ogUrlMeta.getAttribute('content');
-    if (val) metadata.ogUrl = val.replace(/\s+/g, ' ').trim();
-  }
-  
-  const viewportMeta = document.querySelector('meta[name="viewport"]');
-  if (viewportMeta) {
-    const val = viewportMeta.getAttribute('content');
-    if (val) metadata.viewport = val.replace(/\s+/g, ' ').trim();
-  }
-  
-  const charsetMeta = document.characterSet || document.charset;
-  if (charsetMeta) metadata.charset = charsetMeta.replace(/\s+/g, ' ').trim();
+  if (!url || url.startsWith('chrome://') || url.startsWith('chrome-extension://')) return;
 
-  const assertionEvent = {
-    action: 'assertion',
-    type: 'page',
-    condition: 'landing',
-    title: title,
-    url: url,
-    timestamp: timestamp,
-    metadata: Object.keys(metadata).length > 0 ? metadata : undefined
-  };
+  // Deduplicazione preventiva per evitare doppi scatti sullo stesso URL
+  getCachedEvents((events) => {
+    const lastEvent = events[events.length - 1];
+    if (lastEvent && lastEvent.action === 'assertion' && 
+        (lastEvent.type === 'page' || lastEvent.condition === 'landing') && 
+        lastEvent.url === url) {
+      return;
+    }
 
-  saveAssertionWithScreenshot(assertionEvent, `✓ Page Assertion added: ${title}`);
+    isLandingAssertionInFlight = true;
+    const title = (document.title || 'Senza Titolo').replace(/\s+/g, ' ').trim();
+    const timestamp = new Date().toISOString();
+    
+    // Extract metadata
+    const metadata = {};
+    const descriptionMeta = document.querySelector('meta[name="description"]');
+    if (descriptionMeta) {
+      const val = descriptionMeta.getAttribute('content');
+      if (val) metadata.description = val.replace(/\s+/g, ' ').trim();
+    }
+    
+    const keywordsMeta = document.querySelector('meta[name="keywords"]');
+    if (keywordsMeta) {
+      const val = keywordsMeta.getAttribute('content');
+      if (val) metadata.keywords = val.replace(/\s+/g, ' ').trim();
+    }
+    
+    const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+    if (ogTitleMeta) {
+      const val = ogTitleMeta.getAttribute('content');
+      if (val) metadata.ogTitle = val.replace(/\s+/g, ' ').trim();
+    }
+    
+    const ogDescMeta = document.querySelector('meta[property="og:description"]');
+    if (ogDescMeta) {
+      const val = ogDescMeta.getAttribute('content');
+      if (val) metadata.ogDescription = val.replace(/\s+/g, ' ').trim();
+    }
+    
+    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
+    if (ogUrlMeta) {
+      const val = ogUrlMeta.getAttribute('content');
+      if (val) metadata.ogUrl = val.replace(/\s+/g, ' ').trim();
+    }
+    
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) {
+      const val = viewportMeta.getAttribute('content');
+      if (val) metadata.viewport = val.replace(/\s+/g, ' ').trim();
+    }
+    
+    const charsetMeta = document.characterSet || document.charset;
+    if (charsetMeta) metadata.charset = charsetMeta.replace(/\s+/g, ' ').trim();
+
+    const assertionEvent = {
+      action: 'assertion',
+      type: 'page',
+      condition: 'landing',
+      title: title,
+      url: url,
+      timestamp: timestamp,
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined
+    };
+
+    saveAssertionWithScreenshot(assertionEvent, `✓ Page Assertion added: ${title}`);
+    setTimeout(() => { isLandingAssertionInFlight = false; }, 800);
+  });
 }
 
 // SPA and Redirection URL detection
 let lastKnownUrl = window.location.href;
 
 function checkUrlChange() {
+  if (window.self !== window.top) return;
   if (window.location.href !== lastKnownUrl) {
     lastKnownUrl = window.location.href;
     if (isRecording) {
@@ -1520,6 +1544,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true });
   } else if (request.action === 'ping') {
     sendResponse({ success: true, url: window.location.href, title: document.title });
+  } else if (request.action === 'ensureLandingAssertion') {
+    if (window.self === window.top) {
+      addLandingAssertion();
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ success: false, reason: 'not-top-frame' });
+    }
   }
   return true;
 });

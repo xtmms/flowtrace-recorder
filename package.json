@@ -1,0 +1,24 @@
+{
+  "name": "flowtrace-recorder",
+  "version": "2.0.0",
+  "description": "Native Chrome Side Panel for recording web interactions, assertions, and automated test flows.",
+  "private": true,
+  "scripts": {
+    "package": "node scripts/package.js",
+    "package:open": "node scripts/package.js --open",
+    "zip": "node scripts/package.js",
+    "build:zip": "node scripts/package.js",
+    "test:syntax": "node -c content.js sidepanel.js background.js storage-delta.js sidepanel-parser.js sidepanel-report.js"
+  },
+  "keywords": [
+    "chrome-extension",
+    "side-panel",
+    "manifest-v3",
+    "testing",
+    "automation",
+    "flowtrace",
+    "nrt"
+  ],
+  "author": "FlowTrace Team",
+  "license": "UNLICENSED"
+}

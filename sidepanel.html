@@ -1,127 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
   <meta charset="utf-8">
   <title>FlowTrace Recorder</title>
   <style>
+    :root {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-hover: #f1f5f9;
+      --bg-active: #e2e8f0;
+      
+      --border-subtle: #f1f5f9;
+      --border-base: #e2e8f0;
+      --border-dark: #cbd5e1;
+      --border-focus: #6366f1;
+      
+      --text-main: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: rgba(99, 102, 241, 0.08);
+      --primary-ring: rgba(99, 102, 241, 0.2);
+      
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --danger-light: rgba(239, 68, 68, 0.08);
+      
+      --success: #10b981;
+      --success-hover: #059669;
+      --success-light: rgba(16, 185, 129, 0.1);
+      --success-border: #a7f3d0;
+      
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.1);
+      
+      --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+      --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+      
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-full: 9999px;
+      
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       padding: 0;
-      background: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-base);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: var(--text-main);
       overflow-x: hidden;
       width: 100%;
-      min-width: 280px; width: 100%;
-      margin: 0 auto;
+      min-width: 280px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    *:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 1px;
     }
 
     #flowtrace-sidepanel {
-      width: 100% !important;
-      box-sizing: border-box;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
-    body.acsb-keynav .flowtrace-content button:focus,
-    body.acsb-keynav .flowtrace-content button:focus-visible,
-    body.acsb-keynav .flowtrace-content input:focus,
-    body.acsb-keynav .flowtrace-content input:focus-visible,
-    body.acsb-keynav .flowtrace-content textarea:focus,
-    body.acsb-keynav .flowtrace-content textarea:focus-visible,
-    body.acsb-keynav .flowtrace-content *:focus,
-    body.acsb-keynav .flowtrace-content *:focus-visible {
-      outline: none !important;
-      outline-offset: 0 !important;
-      box-shadow: none !important;
-    }
-
-    .flowtrace-content {
-      padding: 10px 12px;
-      text-align: center;
-      box-sizing: border-box;
-    }
-
-    /* Pulsanti Compact Card */
-    .flowtrace-content button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      background: #ffffff;
-      border: 1.5px solid #e2e8f0;
-      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-      margin: 0;
-      padding: 0;
-      cursor: pointer;
-    }
-
-    .flowtrace-content button:hover:not(:disabled) {
-      border-color: #4f46e5;
-      background: #f8fafc;
-      transform: translateY(-1px);
-      box-shadow: 0 3px 6px -2px rgba(0, 0, 0, 0.05), 0 1px 3px -2px rgba(0, 0, 0, 0.05);
-    }
-
-    .flowtrace-content button:active:not(:disabled) {
-      transform: translateY(0) scale(0.95);
-    }
-
-    .flowtrace-content button:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-      background: #f1f5f9;
-      border-color: #e2e8f0;
-      box-shadow: none;
-    }
-
-    .flowtrace-content img {
-      width: 20px;
-      height: 20px;
-      display: block;
-      pointer-events: none;
-    }
-
-    /* Header Stile Premium Compatto */
-    #flowtrace-sidepanel-header {
-      background: #ffffff;
-      border-bottom: 1.5px solid #e2e8f0;
-      padding: 10px 12px;
+    /* Header */
+    #flowtrace-header {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-base);
+      padding: 8px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-sizing: border-box;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
     }
 
-    /* Chip di Stato Compatto */
+    .flowtrace-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-align: left;
+      user-select: none;
+    }
+
+    .flowtrace-brand-icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 2px 4px rgba(79, 70, 229, 0.25));
+    }
+
+    .flowtrace-brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+
+    .flowtrace-brand-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text-main);
+    }
+
+    .flowtrace-brand-badge {
+      font-size: 8.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+    }
+
+    .flowtrace-header-right {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
     #status {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 5px;
-      padding: 4px 8px;
-      border-radius: 9999px;
-      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      font-size: 9.5px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
       margin: 0;
-      border: 1px solid #e2e8f0;
-      background: #f8fafc;
-      color: #475569;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-      transition: all 0.25s ease;
+      border: 1px solid var(--border-base);
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+      box-shadow: var(--shadow-xs);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
     }
 
     #status::before {
       content: "";
       display: inline-block;
-      width: 6px;
-      height: 6px;
+      width: 5.5px;
+      height: 5.5px;
       border-radius: 50%;
       background: currentColor;
-      box-shadow: 0 0 6px currentColor;
-      animation: statusPulse 2s infinite ease-in-out;
     }
 
     @keyframes statusPulse {
@@ -131,147 +173,500 @@
     }
 
     #status.status-recording {
-      color: #10b981 !important;
-      background: rgba(16, 185, 129, 0.08) !important;
-      border-color: rgba(16, 185, 129, 0.18) !important;
+      color: var(--success) !important;
+      background: var(--success-light) !important;
+      border-color: var(--success-border) !important;
+    }
+
+    #status.status-recording::before {
+      box-shadow: 0 0 6px currentColor;
+      animation: statusPulse 1.6s infinite ease-in-out;
     }
 
     #status.status-stopped {
-      color: #f43f5e !important;
-      background: rgba(244, 63, 94, 0.08) !important;
-      border-color: rgba(244, 63, 94, 0.18) !important;
+      color: #e11d48 !important;
+      background: #fff1f2 !important;
+      border-color: #fecdd3 !important;
     }
 
     #status.status-edit {
-      color: #f97316 !important;
-      background: rgba(249, 115, 22, 0.08) !important;
-      border-color: rgba(249, 115, 22, 0.18) !important;
+      color: #d97706 !important;
+      background: #fffbeb !important;
+      border-color: #fde68a !important;
     }
 
-    /* Stili per i pulsanti dell'header */
-    #flowtrace-sidepanel-header button {
+    #status.status-edit::before {
+      box-shadow: 0 0 6px currentColor;
+      animation: statusPulse 1.6s infinite ease-in-out;
+    }
+
+    #flowtrace-header button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
-      border: none;
+      width: 26px;
+      height: 26px;
+      border: 1px solid transparent;
       background: transparent;
-      padding: 4px;
+      padding: 0;
       cursor: pointer;
-      box-shadow: none;
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       transition: all 0.15s ease;
+      color: var(--text-secondary);
     }
 
-    #flowtrace-sidepanel-header button:hover {
-      background: #f1f5f9;
+    #flowtrace-header button:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-base);
     }
 
-    #flowtrace-sidepanel-header button:active {
-      transform: scale(0.9);
+    #flowtrace-header button:active {
+      transform: scale(0.92);
     }
 
-    #flowtrace-sidepanel-header button img {
-      width: 18px;
-      height: 18px;
+    #flowtrace-header button img {
+      width: 15px;
+      height: 15px;
       pointer-events: none;
       display: block;
     }
 
+    /* Content Area */
+    .flowtrace-content {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
-    /* Input Nome Test Compatto */
+    /* Main Card */
+    .main-actions {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-base);
+      border-radius: var(--radius-lg);
+      padding: 10px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Test Name Input Container */
     #testNameContainer {
       display: flex;
       align-items: center;
       gap: 6px;
-      width: 240px;
-      margin: 0 auto;
+      width: 100%;
+      background: var(--bg-base);
+      border: 1px solid var(--border-base);
+      border-radius: var(--radius-md);
+      padding: 3px 6px 3px 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       box-sizing: border-box;
     }
 
+    #testNameContainer:focus-within {
+      background: var(--bg-surface);
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--primary-ring);
+    }
+
+    .test-name-icon {
+      color: var(--text-muted);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+    }
+
     #testNameInput {
-      flex: 1 !important;
-      width: 0 !important;
-      min-width: 0 !important;
-      padding: 5px 8px !important;
-      border: 1.5px solid #cbd5e1 !important;
-      border-radius: 6px !important;
-      font-size: 11px !important;
-      font-weight: 500 !important;
-      color: #1e293b !important;
-      background: #ffffff !important;
-      outline: none !important;
-      transition: all 0.2s ease !important;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
-      margin: 0 !important;
-      box-sizing: border-box !important;
-    }
-
-    #btnClearTestName:hover {
-      border-color: #f43f5e !important;
-      background: #fff1f2 !important;
-    }
-    
-    #btnClearTestName:hover span {
-      color: #f43f5e !important;
-    }
-
-    #testNameInput:focus {
-      border-color: #4f46e5 !important;
-      box-shadow: 0 0 0 3px rgba(0, 112, 173, 0.18) !important;
+      flex: 1;
+      width: 0;
+      min-width: 0;
+      padding: 4px 2px;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-main);
+      background: transparent;
+      outline: none;
     }
 
     #testNameInput::placeholder {
-      color: #94a3b8;
+      color: var(--text-muted);
+      font-weight: 400;
     }
 
-    /* Righe dei Pulsanti Allineate in un'unica riga */
+    #btnClearTestName {
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      color: var(--text-muted);
+    }
+
+    #btnClearTestName:hover {
+      background: var(--danger-light);
+      color: var(--danger);
+    }
+
+    #btnClearTestName span {
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    /* Action Buttons Row */
     .action-buttons-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 4px;
-      margin-top: 8px;
-      margin-bottom: 8px;
       width: 100%;
     }
 
+    /* Buttons Base */
+    .flowtrace-content button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 0;
+      min-width: 28px;
+      max-width: 36px;
+      height: 33px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-base);
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-xs);
+      margin: 0;
+      padding: 0;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .flowtrace-content button:hover:not(:disabled) {
+      border-color: var(--border-dark);
+      background: var(--bg-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .flowtrace-content button:active:not(:disabled) {
+      transform: translateY(0) scale(0.95);
+    }
+
+    .flowtrace-content button:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+      background: var(--bg-hover);
+      border-color: var(--border-base);
+      box-shadow: none;
+      transform: none;
+    }
+
+    .flowtrace-content button img {
+      width: 17px;
+      height: 17px;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* Hero Start/Stop Micro-interactions */
+    #btnStart:not(:disabled):hover {
+      border-color: #fca5a5;
+      background: #fff1f2;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+    }
+
+    #btnStop:not(:disabled) {
+      border-color: #cbd5e1;
+      background: #ffffff;
+      animation: stopAttention 2s infinite ease-in-out;
+    }
+
+    #btnStop:not(:disabled):hover {
+      border-color: var(--text-main);
+      background: var(--bg-hover);
+      box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+    }
+
+    @keyframes stopAttention {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+      70% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* Active assertion / comment toggle state */
+    .flowtrace-content button.active {
+      border-color: var(--success) !important;
+      background: var(--success-light) !important;
+      box-shadow: 0 0 0 2.5px rgba(16, 185, 129, 0.25) !important;
+      transform: scale(0.98);
+    }
+
+    /* Target Banner */
+    #assertionTargetBanner {
+      display: none;
+      margin: 4px 0 0 0;
+      padding: 6px 10px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      line-height: 1.4;
+      border-radius: var(--radius-sm);
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-dark);
+      border-left: 3px solid var(--primary);
+      text-align: left;
+      word-break: break-all;
+      box-shadow: var(--shadow-xs);
+    }
+
+    /* Interactive popdown input containers */
+    #assertionTextContainer,
+    #commentContainer {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      padding: 4px 6px;
+      border: 1.5px solid var(--primary);
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.15);
+      animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #assertionTextInput,
+    #commentInput {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 4px 6px;
+      color: var(--text-main);
+    }
+
+    #assertionTextInput::placeholder,
+    #commentInput::placeholder {
+      color: var(--text-muted);
+    }
+
+    #assertionTextContainer button,
+    #commentContainer button {
+      width: 26px;
+      height: 26px;
+      min-width: 26px;
+      border-radius: var(--radius-sm);
+      background: var(--primary);
+      border: none;
+      box-shadow: 0 1px 2px rgba(79, 70, 229, 0.3);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    #assertionTextContainer button:hover,
+    #commentContainer button:hover {
+      background: var(--primary-hover);
+    }
+
+    #assertionTextContainer img,
+    #commentContainer img {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Logs & Console Section */
+    #toggleLogs {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-base);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-xs);
+      user-select: none;
+    }
+
+    #toggleLogs:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-dark);
+    }
+
+    .toggle-logs-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 600;
+      font-size: 11.5px;
+      color: var(--text-main);
+    }
+
+    #logsCounter {
+      background: var(--primary);
+      color: #ffffff !important;
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      box-shadow: 0 1px 2px rgba(79, 70, 229, 0.3);
+    }
+
+    #arrowLogs {
+      color: var(--text-muted);
+      font-size: 9px;
+      transition: transform 0.2s ease;
+    }
+
+    #logsSection {
+      text-align: center;
+      padding: 2px 0 0 0;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    #logActions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    #logActions button {
+      width: 26px;
+      height: 26px;
+      min-width: 26px;
+      border-radius: var(--radius-sm);
+    }
+
+    .small-icon {
+      width: 14px !important;
+      height: 14px !important;
+    }
+
+    /* Terminal Console */
+    #logDisplay {
+      display: block;
+      width: 100%;
+      height: 115px;
+      padding: 10px 12px;
+      box-sizing: border-box;
+      outline: none !important;
+      font-family: var(--font-mono) !important;
+      font-size: 10.5px !important;
+      line-height: 1.5;
+      border: 1px solid #1e293b;
+      border-radius: var(--radius-md);
+      background: #090d16;
+      color: #cbd5e1;
+      resize: vertical;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #logDisplay::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    #logDisplay::-webkit-scrollbar-track {
+      background: #090d16;
+      border-radius: 4px;
+    }
+
+    #logDisplay::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+
+    #logDisplay::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    #logDisplay.edit-mode {
+      background: #1e1b4b !important;
+      color: #fef08a !important;
+      border-color: #f59e0b !important;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* Bottom Row Action Buttons */
     .log-buttons-row {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       margin-top: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 2px;
       width: 100%;
     }
 
     .log-buttons-row button {
-      width: 38px !important;
-      height: 38px !important;
-      border-radius: 8px !important;
+      width: 36px !important;
+      height: 36px !important;
+      min-width: 36px !important;
+      border-radius: var(--radius-md) !important;
     }
 
     .log-buttons-row img {
-      width: 24px !important;
-      height: 24px !important;
+      width: 18px !important;
+      height: 18px !important;
     }
 
-    /* Full-panel loading overlay for ZIP generation/parsing (can take a
-       moment on long sessions with many screenshots) */
+    #btnClear:hover:not(:disabled) {
+      border-color: #fca5a5 !important;
+      background: #fff1f2 !important;
+    }
+
+    #btnDownload:hover:not(:disabled),
+    #btnUpload:hover:not(:disabled) {
+      border-color: #a5b4fc !important;
+      background: #eef2ff !important;
+    }
+
+    #btnEdit:hover:not(:disabled) {
+      border-color: #fde68a !important;
+      background: #fffbeb !important;
+    }
+
+    /* Loading Overlay */
     #flowtrace-loading-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(2px);
-      -webkit-backdrop-filter: blur(2px);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 999999;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
+      gap: 14px;
     }
 
     #flowtrace-loading-overlay.active {
@@ -279,179 +674,23 @@
     }
 
     #flowtrace-loading-overlay .flowtrace-spinner {
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       border: 3px solid #e2e8f0;
-      border-top-color: #4f46e5;
+      border-top-color: var(--primary);
       border-radius: 50%;
-      animation: nadaSpin 0.7s linear infinite;
+      animation: nadaSpin 0.75s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
     }
 
     #flowtrace-loading-overlay .flowtrace-loading-text {
       font-size: 12px;
       font-weight: 600;
-      color: #475569;
-      letter-spacing: 0.2px;
+      color: var(--text-secondary);
+      letter-spacing: -0.1px;
     }
 
     @keyframes nadaSpin {
       to { transform: rotate(360deg); }
-    }
-
-    /* Sezione Logs e Dropdown */
-    #toggleLogs {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 6px 12px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      color: #475569;
-      font-weight: 600;
-      font-size: 11px;
-      cursor: pointer;
-      margin: 6px auto 2px auto;
-      transition: all 0.2s ease;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    }
-
-    #toggleLogs:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
-      color: #0f172a;
-    }
-
-    #logsCounter {
-      background: #4f46e5;
-      color: #ffffff !important;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 9999px;
-    }
-
-    #arrowLogs {
-      color: #64748b;
-      font-size: 10px;
-      margin-left: 4px;
-      transition: transform 0.2s ease;
-    }
-
-    /* Banner Asserzione */
-    #assertionTargetBanner {
-      display: none;
-      margin: 6px auto;
-      padding: 6px 10px;
-      font-size: 10px;
-      font-family: Consolas, Monaco, monospace;
-      border-radius: 6px;
-      background: #f1f5f9;
-      color: #475569;
-      border: 1px solid #cbd5e1;
-      max-width: 100%;
-      text-align: left;
-      word-break: break-all;
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
-    }
-
-    /* Contenitori Input a Comparsa Compatti */
-    #assertionTextContainer, #commentContainer {
-      display: none;
-      align-items: center;
-      max-width: 100%;
-      margin: 8px auto 0 auto;
-      padding: 3px 5px;
-      border: 1.5px solid #4f46e5;
-      border-radius: 8px;
-      background: #ffffff;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    #assertionTextContainer button, #commentContainer button {
-      width: 30px;
-      height: 30px;
-      border-radius: 6px;
-      margin: 0;
-    }
-
-    #assertionTextContainer img, #commentContainer img {
-      width: 16px;
-      height: 16px;
-    }
-
-    #assertionTextInput, #commentInput {
-      flex: 1;
-      outline: none !important;
-      box-shadow: none !important;
-      font-size: 12px;
-      font-weight: 500;
-      padding: 4px 6px;
-      border: none;
-      color: #1e293b;
-    }
-
-    #assertionTextInput::placeholder, #commentInput::placeholder {
-      color: #94a3b8;
-    }
-
-    /* Terminale di Log Compatto */
-    #logDisplay {
-      display: block;
-      width: 100%;
-      height: 100px;
-      margin-top: 8px;
-      padding: 10px;
-      box-sizing: border-box;
-      outline: none !important;
-      font-family: Consolas, Monaco, "Lucida Console", "Fira Code", monospace !important;
-      font-size: 10px !important;
-      line-height: 1.35;
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08) !important;
-      margin-bottom: 8px;
-      border: 1.5px solid #1e293b;
-      border-radius: 8px;
-      background: #f1f5f9;
-      color: #1e293b;
-      resize: vertical;
-    }
-
-    #logDisplay.edit-mode {
-      background: #1e1b4b;
-      color: #fef08a;
-      border-color: #eab308;
-      box-shadow: 0 0 10px rgba(234, 179, 8, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.12) !important;
-      transition: all 0.25s ease;
-    }
-
-    .small-icon {
-      width: 18px !important;
-      height: 18px !important;
-    }
-
-    #logActions {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      margin-bottom: 4px;
-    }
-
-    #logActions button {
-      width: 30px;
-      height: 30px;
-      border-radius: 6px;
-      margin: 0;
-    }
-
-    #logsSection {
-      text-align: center;
-      padding: 2px 4px;
-      max-height: 380px;
-    }
-
-    #logsSection button {
-      cursor: pointer;
     }
   </style>
   <script src="jszip.min.js" defer></script>
@@ -463,23 +702,31 @@
 <body>
   <div id="flowtrace-sidepanel">
     <div id="flowtrace-header">
-      <div style="display: flex; align-items: center; gap: 8px; text-align: left;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(79, 70, 229, 0.2));">
-          <rect width="24" height="24" rx="6" fill="#4f46e5"/>
-          <circle cx="12" cy="12" r="5" fill="#ef4444"/>
-          <path d="M12 4V7M12 17V20M4 12H7M17 12H20" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        <div style="display: flex; flex-direction: column; line-height: 1.15;">
-          <span style="font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: #1e293b;">FlowTrace</span>
-          <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #4f46e5; letter-spacing: 0.5px;">Native Recorder</span>
+      <div class="flowtrace-brand">
+        <div class="flowtrace-brand-icon">
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="26" height="26" rx="7" fill="url(#brandGrad)"/>
+            <circle cx="13" cy="13" r="5.5" fill="#ffffff" fill-opacity="0.95"/>
+            <circle cx="13" cy="13" r="3" fill="#ef4444"/>
+            <defs>
+              <linearGradient id="brandGrad" x1="0" y1="0" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6366f1"/>
+                <stop offset="1" stop-color="#4338ca"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="flowtrace-brand-text">
+          <span class="flowtrace-brand-title">FlowTrace</span>
+          <span class="flowtrace-brand-badge">Native Recorder</span>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 4px;">
+      <div class="flowtrace-header-right">
         <div id="status">Checking...</div>
         <button id="btnReset" title="Reset completo">
           <img id="imgReset">
         </button>
-        <button id="btnDetach" title="Stacca Finestra" style="display: none;">
+        <button id="btnDetach" title="Stacca in finestra separata" style="display: none;">
           <img id="imgDetach">
         </button>
         <button id="btnAttach" title="Riattacca a Chrome" style="display: none;">
@@ -487,45 +734,40 @@
         </button>
       </div>
     </div>
+    
     <div class="flowtrace-content">
       <div class="main-actions">
-        <div style="margin-bottom: 8px; width: 100%; display: flex; justify-content: center;">
-          <div id="testNameContainer">
-            <input 
-              id="testNameInput" 
-              type="text" 
-              placeholder="Nome del Test..." 
-            />
-            <button id="btnClearTestName" title="Cancella nome test" style="
-              width: 24px;
-              height: 24px;
-              min-width: 24px;
-              padding: 0;
-              border: 1.5px solid #cbd5e1;
-              background: #ffffff;
-              border-radius: 6px;
-              cursor: pointer;
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-              box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-            ">
-              <span style="font-size: 10px; color: #64748b; font-weight: 700; pointer-events: none; transition: color 0.15s ease;">✕</span>
-            </button>
-          </div>
+        <div id="testNameContainer">
+          <span class="test-name-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </span>
+          <input 
+            id="testNameInput" 
+            type="text" 
+            placeholder="Nome del Test..." 
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <button id="btnClearTestName" title="Cancella nome test">
+            <span>✕</span>
+          </button>
         </div>
         
         <div class="action-buttons-row">
-          <button id="btnStart" title="Start recording"><img id="imgRec" ></button>
-          <button id="btnStop" disabled title="Stop recording"><img id="imgStop" ></button>
-          <button id="btnAssertionText" disabled title="Assertion: text"><img id="imgAssertionText" ></button>
-          <button id="btnAssertionVisible" disabled title="Assertion: visible"><img id="imgAssertionVisible" ></button>
-          <button id="btnAssertionEnabled" disabled title="Assertion: enabled"><img id="imgAssertionEnabled" ></button>
-          <button id="btnAssertionDisabled" disabled title="Assertion: disabled"><img id="imgAssertionDisabled" ></button>
-          <!--<button id="btnAssertionPage" disabled title="Assertion: page"><img id="imgAssertionPage" ></button>-->
+          <button id="btnStart" title="Start recording"><img id="imgRec"></button>
+          <button id="btnStop" disabled title="Stop recording"><img id="imgStop"></button>
+          <button id="btnAssertionText" disabled title="Assertion: text"><img id="imgAssertionText"></button>
+          <button id="btnAssertionVisible" disabled title="Assertion: visible"><img id="imgAssertionVisible"></button>
+          <button id="btnAssertionEnabled" disabled title="Assertion: enabled"><img id="imgAssertionEnabled"></button>
+          <button id="btnAssertionDisabled" disabled title="Assertion: disabled"><img id="imgAssertionDisabled"></button>
           <button id="btnAssertionColor" disabled title="Assertion: color"><img id="imgAssertionColor"></button>
-          <button id="btnAddComment" disabled title="Add Comment"><img id="imgAddComment" ></button> 
+          <button id="btnAddComment" disabled title="Add Comment"><img id="imgAddComment"></button> 
         </div>
 
         <div id="assertionTargetBanner"></div>
@@ -534,44 +776,56 @@
           <input 
             id="assertionTextInput" 
             type="text" 
-            placeholder="Valore da verificare..."         
+            placeholder="Valore atteso da verificare..." 
+            spellcheck="false"
           />
-          <button id="btnAssertionSend" title="Send">
+          <button id="btnAssertionSend" title="Invia asserzione (Invio)">
             <img id="imgAssertionSend">
           </button>
         </div>
+        
         <div id="commentContainer">
           <input 
             id="commentInput" 
             type="text" 
-            placeholder="Scrivi un commento..." 
+            placeholder="Scrivi una nota o commento..." 
+            spellcheck="false"
           />
-          <button id="btnCommentSend" title="Send">
+          <button id="btnCommentSend" title="Invia commento (Invio)">
             <img id="imgCommentSend">
           </button>
         </div>
       </div>
+
       <div id="toggleLogs">
-        <span>Interactions : </span>
-        <span id="logsCounter">0</span>
-        <span id="arrowLogs" title="View logs">&#9660;</span>    
+        <div class="toggle-logs-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #64748b;">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+          </svg>
+          <span>Interazioni</span>
+          <span id="logsCounter">0</span>
+        </div>
+        <span id="arrowLogs" title="Espandi/Comprimi">&#9660;</span>    
       </div>
+
       <div id="logsSection" style="display:none;">    
         <div id="logActions">
           <button id="btnUndo" title="Undo"><img id="imgUndo" class="small-icon"></button>
           <button id="btnRedo" title="Redo"><img id="imgRedo" class="small-icon"></button>
         </div>
-        <textarea id="logDisplay" readonly placeholder="Waiting for actions..." ></textarea>
+        <textarea id="logDisplay" readonly placeholder="Waiting for actions..." spellcheck="false"></textarea>
         <div class="log-buttons-row">
-          <button id="btnDownload" title="Scarica Archivio ZIP (JSON + Report HTML)"><img id="imgDownload" ></button>
-          <button id="btnClear" title="Clear Logs"><img id="imgClear" ></button>
-          <button id="btnUpload" title="Carica Archivio ZIP o JSON"><img id="imgUpload" ></button>    
-          <button id="btnEdit" title="Edit Logs"><img id="imgEdit" ></button>  
+          <button id="btnDownload" title="Scarica Archivio ZIP (JSON + Report HTML)"><img id="imgDownload"></button>
+          <button id="btnClear" title="Clear Logs"><img id="imgClear"></button>
+          <button id="btnUpload" title="Carica Archivio ZIP o JSON"><img id="imgUpload"></button>    
+          <button id="btnEdit" title="Edit Logs"><img id="imgEdit"></button>  
         </div>
         <input type="file" id="uploadInput" accept=".zip,application/json" style="display:none;">
       </div>
     </div>
   </div>
+
   <div id="flowtrace-loading-overlay">
     <div class="flowtrace-spinner"></div>
     <div class="flowtrace-loading-text" id="flowtrace-loading-text">Generazione ZIP in corso...</div>
