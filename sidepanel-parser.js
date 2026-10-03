@@ -124,6 +124,16 @@ function saveLogsFromTextarea() {
   }
 }
 
+let lastParsedTimestamp = 0;
+function generateUniqueTimestamp() {
+  let now = Date.now();
+  if (now <= lastParsedTimestamp) {
+    now = lastParsedTimestamp + 1;
+  }
+  lastParsedTimestamp = now;
+  return new Date(now).toISOString();
+}
+
 function parseLogsFromText(text) {
   if (!text || text.trim() === "No events recorded yet.") return [];
   const blocks = text
@@ -141,7 +151,7 @@ function parseLogsFromText(text) {
           condition: 'visible',
           locator: firstLine.replace(/\[ASSERTION - VISIBLE\]\s*/, '').trim(),
           url: lines.find(l => l.startsWith('URL:'))?.replace('URL:', '').trim() || '',
-          timestamp: new Date().toISOString()
+          timestamp: generateUniqueTimestamp()
         };
       }
       if (firstLine.includes('ASSERTION TEXT')) {
@@ -152,7 +162,7 @@ function parseLogsFromText(text) {
           locator: firstLine.replace(/\[ASSERTION TEXT\]\s*/, '').trim(),
           expected_value: lines.find(l => l.startsWith('Expected:'))?.replace('Expected:', '').trim() || '',
           url: lines.find(l => l.startsWith('URL:'))?.replace('URL:', '').trim() || '',
-          timestamp: new Date().toISOString()
+          timestamp: generateUniqueTimestamp()
         };
       }
       if (firstLine.includes('ASSERTION PAGE')) {
@@ -162,7 +172,7 @@ function parseLogsFromText(text) {
           condition: 'landing',
           title: firstLine.replace(/\[ASSERTION PAGE\]\s*Landing on:\s*/, '').trim(),
           url: lines.find(l => l.startsWith('URL:'))?.replace('URL:', '').trim() || '',
-          timestamp: new Date().toISOString()
+          timestamp: generateUniqueTimestamp()
         };
       }
       if (firstLine.includes('[COMMENT]')) {
@@ -170,7 +180,7 @@ function parseLogsFromText(text) {
           action: 'comment',
           comment: firstLine.replace('[COMMENT]', '').trim(),
           url: lines.find(l => l.startsWith('URL:'))?.replace('URL:', '').trim() || '',
-          timestamp: new Date().toISOString()
+          timestamp: generateUniqueTimestamp()
         };
       }
       if (firstLine.includes('ASSERTION - ENABLED')) {
@@ -180,7 +190,7 @@ function parseLogsFromText(text) {
           condition: 'enabled',
           locator: firstLine.replace(/\[ASSERTION - ENABLED\]\s*/, '').trim(),
           url: lines.find(l => l.startsWith('URL:'))?.replace('URL:', '').trim() || '',
-          timestamp: new Date().toISOString()
+          timestamp: generateUniqueTimestamp()
         };
       }
       if (firstLine.includes('ASSERTION - DISABLED')) {
@@ -190,7 +200,7 @@ function parseLogsFromText(text) {
           condition: 'disabled',
           locator: firstLine.replace(/\[ASSERTION - DISABLED\]\s*/, '').trim(),
           url: lines.find(l => l.startsWith('URL:'))?.replace('URL:', '').trim() || '',
-          timestamp: new Date().toISOString()
+          timestamp: generateUniqueTimestamp()
         };
       }
       if (firstLine.includes('ASSERTION COLOR')) {
@@ -201,7 +211,7 @@ function parseLogsFromText(text) {
           locator: firstLine.replace(/\[ASSERTION COLOR\]\s*/, '').trim(),
           expected_value: lines.find(l => l.startsWith('Expected:'))?.replace('Expected:', '').trim() || '',
           url: lines.find(l => l.startsWith('URL:'))?.replace('URL:', '').trim() || '',
-          timestamp: new Date().toISOString()
+          timestamp: generateUniqueTimestamp()
         };
       }
       if (firstLine.includes('[SELECT]')) {
@@ -213,7 +223,7 @@ function parseLogsFromText(text) {
           locator: locator,
           value: { value: valueLine, text: textLine },
           url: lines.find(l => l.startsWith('URL:'))?.replace('URL:', '').trim() || '',
-          timestamp: new Date().toISOString()
+          timestamp: generateUniqueTimestamp()
         };
       }
       
@@ -226,7 +236,7 @@ function parseLogsFromText(text) {
         action: action,
         locator: locator,
         url: lines.find(l => l.startsWith('URL:'))?.replace('URL:', '').trim() || '',
-        timestamp: new Date().toISOString()
+        timestamp: generateUniqueTimestamp()
       };
       if (valueLine !== undefined) {
         if (action === 'scroll') {

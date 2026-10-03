@@ -46,16 +46,23 @@ function getCachedEvents(cb) {
   });
 }
 
+let writeQueue = Promise.resolve();
+
 function appendRecordedEvent(eventData, callback) {
-  getCachedEvents((events) => {
-    events.push(eventData);
-    // Scrittura delta: evt_{ts} una volta + lista ordine (soli timestamp).
-    // La cache resta sincronizzata (nessuna reload nel frame che scrive).
-    const writes = { events: events.map(e => e.timestamp) };
-    writes['evt_' + eventData.timestamp] = eventData;
-    chrome.storage.local.set(writes, () => {
-      if (callback) callback();
+  writeQueue = writeQueue.then(() => new Promise((resolve) => {
+    getCachedEvents((events) => {
+      events.push(eventData);
+      // Scrittura delta: evt_{ts} una volta + lista ordine (soli timestamp).
+      // La cache resta sincronizzata (nessuna reload nel frame che scrive).
+      const writes = { events: events.map(e => e.timestamp) };
+      writes['evt_' + eventData.timestamp] = eventData;
+      chrome.storage.local.set(writes, () => {
+        if (callback) callback();
+        resolve();
+      });
     });
+  })).catch((err) => {
+    console.error('Error appending recorded event:', err);
   });
 }
 
@@ -83,9 +90,6 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     const wasRecording = changes.isRecording.oldValue === true;
     isRecording = changes.isRecording.newValue === true;
     syncActiveListeners();
-    
-    // Update floating panel status
-    updateFloatingPanelStatus(isRecording);
     
     if (isRecording && !wasRecording) {
       if (window.self === window.top && !document.hidden) {
@@ -735,19 +739,26 @@ function recordEvent(actionType, targetElement, value = null, callback = null) {
   if (callback) callback(); // Instant native click execution
 
   chrome.runtime.sendMessage({ action: 'captureScreenshot' }, (response) => {
+    if (chrome.runtime.lastError) {
+      // Background message channel error or service worker timeout fallback
+    }
     const dataUrl = response ? response.dataUrl : null;
+    const proceedWithAppend = () => {
+      appendRecordedEvent(eventData, () => {
+        let tag = '';
+        if (targetElement && targetElement.tagName) {
+          tag = ` <${targetElement.tagName.toLowerCase()}>`;
+        }
+        showToast(`✓ Action recorded: ${actionType.toUpperCase()}${tag}`);
+      });
+    };
+
     if (dataUrl) {
       eventData.hasScreenshot = true;
-      chrome.storage.local.set({ [`screenshot_${eventData.timestamp}`]: dataUrl });
+      chrome.storage.local.set({ [`screenshot_${eventData.timestamp}`]: dataUrl }, proceedWithAppend);
+    } else {
+      proceedWithAppend();
     }
-
-    appendRecordedEvent(eventData, () => {
-      let tag = '';
-      if (targetElement && targetElement.tagName) {
-        tag = ` <${targetElement.tagName.toLowerCase()}>`;
-      }
-      showToast(`✓ Action recorded: ${actionType.toUpperCase()}${tag}`);
-    });
   });
 }
 
@@ -1010,17 +1021,24 @@ document.addEventListener('change', (event) => {
 
 function saveAssertionWithScreenshot(assertionEvent, toastMessage) {
   chrome.runtime.sendMessage({ action: 'captureScreenshot' }, (response) => {
+    if (chrome.runtime.lastError) {
+      // Background message channel error or service worker timeout fallback
+    }
     const dataUrl = response ? response.dataUrl : null;
+    const proceedWithAppend = () => {
+      appendRecordedEvent(assertionEvent, () => {
+        if (toastMessage) {
+          showToast(toastMessage);
+        }
+      });
+    };
+
     if (dataUrl) {
       assertionEvent.hasScreenshot = true;
-      chrome.storage.local.set({ [`screenshot_${assertionEvent.timestamp}`]: dataUrl });
+      chrome.storage.local.set({ [`screenshot_${assertionEvent.timestamp}`]: dataUrl }, proceedWithAppend);
+    } else {
+      proceedWithAppend();
     }
-
-    appendRecordedEvent(assertionEvent, () => {
-      if (toastMessage) {
-        showToast(toastMessage);
-      }
-    });
   });
 }
 

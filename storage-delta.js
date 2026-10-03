@@ -100,15 +100,24 @@ function loadEventsInOrder(cb) {
 
 // Append di un singolo evento: scrive evt_{ts} una volta e appende il
 // timestamp alla lista ordine (scrittura piccola, non O(n) di payload).
+let deltaAppendQueue = Promise.resolve();
+
 function appendDeltaEvent(eventData, cb) {
-  ensureDeltaSchema(() => {
-    chrome.storage.local.get('events', (res) => {
-      const order = Array.isArray(res.events) ? res.events : [];
-      order.push(eventData.timestamp);
-      const writes = { events: order };
-      writes['evt_' + eventData.timestamp] = eventData;
-      chrome.storage.local.set(writes, cb || (() => {}));
+  deltaAppendQueue = deltaAppendQueue.then(() => new Promise((resolve) => {
+    ensureDeltaSchema(() => {
+      chrome.storage.local.get('events', (res) => {
+        const order = Array.isArray(res.events) ? res.events : [];
+        order.push(eventData.timestamp);
+        const writes = { events: order };
+        writes['evt_' + eventData.timestamp] = eventData;
+        chrome.storage.local.set(writes, () => {
+          if (cb) cb();
+          resolve();
+        });
+      });
     });
+  })).catch((err) => {
+    console.error('Error in appendDeltaEvent:', err);
   });
 }
 

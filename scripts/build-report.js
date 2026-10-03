@@ -1,6 +1,9 @@
+// One-time legacy migration script. Disabled to prevent accidental overwrites.
+if (require.main === module) {
+  console.log('scripts/build-report.js is archived and disabled.');
+  process.exit(0);
+}
 const fs = require('fs');
-
-let src = fs.readFileSync('/Users/tommasoianniciello/Desktop/VSW/Agent/aria-nada-plugin/popup-report.js', 'utf8');
 
 // 1. Update primary colors
 src = src.replace('--primary: #0070ad;', '--primary: #4f46e5;');

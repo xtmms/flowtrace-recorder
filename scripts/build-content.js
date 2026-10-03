@@ -1,6 +1,9 @@
+// One-time legacy migration script. Disabled to prevent accidental overwrites.
+if (require.main === module) {
+  console.log('scripts/build-content.js is archived and disabled.');
+  process.exit(0);
+}
 const fs = require('fs');
-
-let src = fs.readFileSync('/Users/tommasoianniciello/Desktop/VSW/Agent/aria-nada-plugin/content.js', 'utf8');
 
 // 1. Cut off floating panel code after convertToInternalStructure
 const cutoffMarker = '// FLOATING RECORDER PANEL (IFRAME ENVELOPE)';

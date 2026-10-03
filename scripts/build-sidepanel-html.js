@@ -1,6 +1,9 @@
+// One-time legacy migration script. Disabled to prevent accidental overwrites.
+if (require.main === module) {
+  console.log('scripts/build-sidepanel-html.js is archived and disabled.');
+  process.exit(0);
+}
 const fs = require('fs');
-
-let src = fs.readFileSync('/Users/tommasoianniciello/Desktop/VSW/Agent/aria-nada-plugin/popup.html', 'utf8');
 
 // 1. Update Title and script tags
 src = src.replace('<title>Capgemini NRT Recorder</title>', '<title>FlowTrace Recorder</title>');

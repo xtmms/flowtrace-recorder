@@ -62,7 +62,7 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 const captureQueue = [];
 let isProcessingCaptureQueue = false;
 let lastCaptureTimestamp = 0;
-const MIN_CAPTURE_INTERVAL_MS = 400;
+const MIN_CAPTURE_INTERVAL_MS = 520;
 const MAX_CAPTURE_RETRIES = 5;
 
 function enqueueCapture(windowId, sendResponse) {
@@ -84,12 +84,24 @@ function processCaptureQueue() {
       if (err && /MAX_CAPTURE_VISIBLE_TAB_CALLS_PER_SECOND/.test(err.message) && task.retries < MAX_CAPTURE_RETRIES) {
         task.retries++;
         captureQueue.unshift(task);
-      } else if (err) {
-        console.warn('Screenshot capture failed:', err.message);
-        task.sendResponse({ success: false, error: err.message });
-      } else {
-        task.sendResponse({ success: true, dataUrl: dataUrl });
+        setTimeout(() => {
+          isProcessingCaptureQueue = false;
+          processCaptureQueue();
+        }, MIN_CAPTURE_INTERVAL_MS * task.retries);
+        return;
       }
+      
+      try {
+        if (err) {
+          console.warn('Screenshot capture failed:', err.message);
+          task.sendResponse({ success: false, error: err.message });
+        } else {
+          task.sendResponse({ success: true, dataUrl: dataUrl });
+        }
+      } catch (sendErr) {
+        console.warn('Screenshot response could not be delivered to port:', sendErr);
+      }
+
       isProcessingCaptureQueue = false;
       processCaptureQueue();
     });

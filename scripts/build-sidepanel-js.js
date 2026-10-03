@@ -1,6 +1,9 @@
+// One-time legacy migration script. Disabled to prevent accidental overwrites.
+if (require.main === module) {
+  console.log('scripts/build-sidepanel-js.js is archived and disabled.');
+  process.exit(0);
+}
 const fs = require('fs');
-
-let src = fs.readFileSync('/Users/tommasoianniciello/Desktop/VSW/Agent/aria-nada-plugin/popup.js', 'utf8');
 
 // 1. Update comments and branding
 src = src.replace('// popup.js - UI Controller for Capgemini NRT Recorder Side Panel', '// sidepanel.js - UI Controller for FlowTrace Recorder (Manifest V3 Side Panel)');

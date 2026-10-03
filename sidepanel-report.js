@@ -48,48 +48,50 @@ async function generateHtmlReport(events, testName) {
   
   function getElementItalianName(type, withPreposition = false) {
     if (!type) return withPreposition ? "dell'elemento" : "l'elemento";
-    const t = type.toLowerCase();
-    if (t === 'checkbox') return withPreposition ? 'della checkbox' : 'la checkbox';
-    if (t === 'radio') return withPreposition ? 'del radio button' : 'il radio button';
-    if (t === 'textarea') return withPreposition ? 'della textarea' : 'la textarea';
-    if (t === 'select') return withPreposition ? 'del menu a discesa' : 'il menu a discesa';
-    if (t === 'link') return withPreposition ? 'del link' : 'il link';
-    if (t === 'button') return withPreposition ? 'del pulsante' : 'il pulsante';
-    if (t === 'text') return withPreposition ? 'del campo di testo' : 'il campo di testo';
-    if (t === 'password') return withPreposition ? 'del campo password' : 'il campo password';
-    if (t === 'email') return withPreposition ? 'del campo email' : 'il campo email';
-    if (t === 'number') return withPreposition ? 'del campo numerico' : 'il campo numerico';
-    if (t === 'date') return withPreposition ? 'del campo data' : 'il campo data';
-    if (['color', 'file', 'hidden', 'image', 'month', 'range', 'reset', 'search', 'submit', 'tel', 'time', 'url', 'week'].includes(t)) {
+    const rawT = String(type).toLowerCase();
+    const t = escapeHtml(rawT);
+    if (rawT === 'checkbox') return withPreposition ? 'della checkbox' : 'la checkbox';
+    if (rawT === 'radio') return withPreposition ? 'del radio button' : 'il radio button';
+    if (rawT === 'textarea') return withPreposition ? 'della textarea' : 'la textarea';
+    if (rawT === 'select') return withPreposition ? 'del menu a discesa' : 'il menu a discesa';
+    if (rawT === 'link') return withPreposition ? 'del link' : 'il link';
+    if (rawT === 'button') return withPreposition ? 'del pulsante' : 'il pulsante';
+    if (rawT === 'text') return withPreposition ? 'del campo di testo' : 'il campo di testo';
+    if (rawT === 'password') return withPreposition ? 'del campo password' : 'il campo password';
+    if (rawT === 'email') return withPreposition ? 'del campo email' : 'il campo email';
+    if (rawT === 'number') return withPreposition ? 'del campo numerico' : 'il campo numerico';
+    if (rawT === 'date') return withPreposition ? 'del campo data' : 'il campo data';
+    if (['color', 'file', 'hidden', 'image', 'month', 'range', 'reset', 'search', 'submit', 'tel', 'time', 'url', 'week'].includes(rawT)) {
       return withPreposition ? `del campo ${t}` : `il campo ${t}`;
     }
     return withPreposition ? `dell'elemento (${t})` : `l'elemento (${t})`;
   }
 
   function getClickActionDescription(type, labelStr, hasLabel) {
-    const t = type ? type.toLowerCase() : '';
+    const rawT = type ? String(type).toLowerCase() : '';
+    const t = escapeHtml(rawT);
     let art = "sull'elemento";
     let artSel = "sull'elemento selezionato";
     
-    if (t === 'checkbox') {
+    if (rawT === 'checkbox') {
       art = "sulla checkbox";
       artSel = "sulla checkbox selezionata";
-    } else if (t === 'radio') {
+    } else if (rawT === 'radio') {
       art = "sul radio button";
       artSel = "sul radio button selezionato";
-    } else if (t === 'textarea') {
+    } else if (rawT === 'textarea') {
       art = "sulla textarea";
       artSel = "sulla textarea selezionata";
-    } else if (t === 'select') {
+    } else if (rawT === 'select') {
       art = "sul menu a discesa";
       artSel = "sul menu a discesa selezionato";
-    } else if (t === 'link') {
+    } else if (rawT === 'link') {
       art = "sul link";
       artSel = "sul link selezionato";
-    } else if (t === 'button') {
+    } else if (rawT === 'button') {
       art = "sul pulsante";
       artSel = "sul pulsante selezionato";
-    } else if (t === 'text') {
+    } else if (rawT === 'text') {
       art = "sul campo di testo";
       artSel = "sul campo di testo selezionato";
     } else if (t) {
@@ -101,19 +103,20 @@ async function generateHtmlReport(events, testName) {
   }
 
   function getInputActionDescription(type, labelStr, hasLabel) {
-    const t = type ? type.toLowerCase() : '';
+    const rawT = type ? String(type).toLowerCase() : '';
+    const t = escapeHtml(rawT);
     let field = "nell'elemento";
-    if (t === 'textarea') {
+    if (rawT === 'textarea') {
       field = "nella textarea";
-    } else if (t === 'text') {
+    } else if (rawT === 'text') {
       field = "nel campo di testo";
-    } else if (t === 'email') {
+    } else if (rawT === 'email') {
       field = "nel campo email";
-    } else if (t === 'password') {
+    } else if (rawT === 'password') {
       field = "nel campo password";
-    } else if (t === 'number') {
+    } else if (rawT === 'number') {
       field = "nel campo numerico";
-    } else if (t === 'date') {
+    } else if (rawT === 'date') {
       field = "nel campo data";
     } else if (t) {
       field = `nel campo (${t})`;
@@ -138,7 +141,7 @@ async function generateHtmlReport(events, testName) {
     // Report generato a chunk: cede all'event loop per non bloccare il popup
     if (idx % REPORT_CHUNK_SIZE === 0) await yieldToEventLoop();
     const e = events[idx];
-    let actionLabel = e.action ? e.action.toUpperCase() : 'AZIONE';
+    let actionLabel = e.action ? escapeHtml(e.action.toUpperCase()) : 'AZIONE';
     let badgeClass = 'badge-step';
     let detailText = '';
     let xpathHtml = '';
@@ -158,14 +161,17 @@ async function generateHtmlReport(events, testName) {
         valHtml = `<div class="detail-row"><strong>Valore Atteso:</strong> <span class="val-highlight">${escapeHtml(e.expected_value)}</span></div>`;
       } else if (e.type === 'page') {
         typeLabel = 'PAGINA';
-        detailText = `Verifica atterraggio sulla pagina`;
+        detailText = e.title 
+          ? `Verifica atterraggio sulla pagina con titolo: <strong>"${escapeHtml(e.title)}"</strong>` 
+          : `Verifica atterraggio sulla pagina`;
       } else if (e.type === 'style' && e.condition === 'color') {
         typeLabel = 'COLORE';
         const elementTypeName = getElementItalianName(e.elementType, true);
         detailText = hasLabel 
           ? `Verifica che il colore ${elementTypeName} ${labelQuote} corrisponda al valore atteso.` 
           : `Verifica che il colore ${elementTypeName} corrisponda al valore atteso.`;
-        valHtml = `<div class="detail-row"><strong>Colore Atteso:</strong> <span class="color-badge" style="background-color: ${escapeHtml(e.expected_value)};"></span> <span class="val-highlight">${escapeHtml(e.expected_value)}</span></div>`;
+        const safeColor = (/^#([0-9a-fA-F]{3,8})$|^rgba?\([0-9,\s.]+\)$/i.test(e.expected_value || '')) ? e.expected_value : 'transparent';
+        valHtml = `<div class="detail-row"><strong>Colore Atteso:</strong> <span class="color-badge" style="background-color: ${safeColor};"></span> <span class="val-highlight">${escapeHtml(e.expected_value)}</span></div>`;
       } else {
         const elementTypeName = getElementItalianName(e.elementType, false);
         const cond = e.condition ? e.condition.toLowerCase() : 'visible';
@@ -180,8 +186,8 @@ async function generateHtmlReport(events, testName) {
           typeLabel = 'DISABILITATO';
           condIt = 'disabilitato';
         } else {
-          typeLabel = cond.toUpperCase();
-          condIt = cond;
+          typeLabel = escapeHtml(cond.toUpperCase());
+          condIt = escapeHtml(cond);
         }
         detailText = hasLabel 
           ? `Verifica che ${elementTypeName} ${labelQuote} sia <strong>${condIt}</strong>.` 
@@ -386,7 +392,8 @@ async function generateHtmlReport(events, testName) {
 
   // JSON.stringify per singolo step (a chunk): evita un unico stringify
   // bloccante su un payload da decine di MB. Il join finale e' nativo.
-  const serializedRawData = ('[' + rawStepsData.map(s => JSON.stringify(s)).join(',') + ']').replace(/<\/script/gi, '<\\/script');
+  // Standard OWASP: rimpiazza tutti i caratteri '<' con '\\u003c' per prevenire breakout da tag script
+  const serializedRawData = ('[' + rawStepsData.map(s => JSON.stringify(s)).join(',') + ']').replace(/</g, '\\u003c');
 
   return `<!DOCTYPE html>
 <html lang="it">
