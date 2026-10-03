@@ -1,6 +1,6 @@
 function alignAndPreserveMetadata(originalEvents, newEvents) {
   if (!originalEvents || originalEvents.length === 0 || !newEvents || newEvents.length === 0) {
-    return;
+    return newEvents || [];
   }
   const N = originalEvents.length;
   const M = newEvents.length;
@@ -61,6 +61,9 @@ function alignAndPreserveMetadata(originalEvents, newEvents) {
       const orig = originalEvents[i-1];
       const newEv = newEvents[j-1];
       
+      if (orig.hasScreenshot) {
+        newEv.hasScreenshot = true;
+      }
       if (orig.screenshot) {
         newEv.screenshot = orig.screenshot;
       }
@@ -70,6 +73,18 @@ function alignAndPreserveMetadata(originalEvents, newEvents) {
       if (orig.metadata) {
         newEv.metadata = orig.metadata;
       }
+      if (orig.outerHTML) {
+        newEv.outerHTML = orig.outerHTML;
+      }
+      if (orig.DOMContext) {
+        newEv.DOMContext = orig.DOMContext;
+      }
+      if (orig.labelText) {
+        newEv.labelText = orig.labelText;
+      }
+      if (orig.elementType) {
+        newEv.elementType = orig.elementType;
+      }
       i--;
       j--;
     } else if (path === 2) {
@@ -78,6 +93,7 @@ function alignAndPreserveMetadata(originalEvents, newEvents) {
       j--;
     }
   }
+  return newEvents;
 }
 
 function saveLogsFromTextarea() {

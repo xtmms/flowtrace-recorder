@@ -12,7 +12,7 @@
   let assertionEnabledMode = false;
   let assertionDisableMode = false;
   let assertionColorMode = false;
-  let isBypassClick = false;
+  let lastRecordedScroll = { x: -1, y: -1 };
   let highlightBox = null;
   let highlightLabel = null;
   let highlightDot = null;
@@ -892,12 +892,36 @@ function syncActiveListeners() {
   if (shouldAttach) {
     document.addEventListener('click', handleDocumentClick, true);
     document.addEventListener('mousemove', handleDocumentMouseMove);
+    window.addEventListener('scroll', handleWindowScroll, { passive: true });
   } else {
     document.removeEventListener('click', handleDocumentClick, true);
     document.removeEventListener('mousemove', handleDocumentMouseMove);
+    window.removeEventListener('scroll', handleWindowScroll, { passive: true });
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = null;
+    }
+    lastRecordedScroll = { x: -1, y: -1 };
     hideHighlight();
     lastHighlightedElement = null;
   }
+}
+
+// Window Scroll Listener (debounced, passive)
+function handleWindowScroll() {
+  if (!isRecording) return;
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout);
+  }
+  scrollTimeout = setTimeout(() => {
+    const scrollX = Math.round(window.scrollX || window.pageXOffset || 0);
+    const scrollY = Math.round(window.scrollY || window.pageYOffset || 0);
+    if (scrollX === lastRecordedScroll.x && scrollY === lastRecordedScroll.y) {
+      return;
+    }
+    lastRecordedScroll = { x: scrollX, y: scrollY };
+    recordEvent('scroll', null, { x: scrollX, y: scrollY });
+  }, 500);
 }
 
 // 1. Click
@@ -960,39 +984,8 @@ function handleDocumentClick(event) {
   if (!isRecording) return;  
   if (event.target.tagName === 'SELECT') return;
 
-  if (isBypassClick) {
-    return;
-  }
-
-  event.preventDefault();
-  event.stopPropagation();
-
   const targetElement = event.target;
-  recordEvent('click', targetElement, null, () => {
-    isBypassClick = true;
-    const newEvent = new MouseEvent('click', {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-      detail: event.detail,
-      screenX: event.screenX,
-      screenY: event.screenY,
-      clientX: event.clientX,
-      clientY: event.clientY,
-      ctrlKey: event.ctrlKey,
-      altKey: event.altKey,
-      shiftKey: event.shiftKey,
-      metaKey: event.metaKey,
-      button: event.button,
-      buttons: event.buttons,
-      relatedTarget: event.relatedTarget
-    });
-    targetElement.dispatchEvent(newEvent);
-
-    setTimeout(() => {
-      isBypassClick = false;
-    }, 0);
-  });
+  recordEvent('click', targetElement);
 }
 
 // 2. Input Change

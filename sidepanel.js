@@ -193,50 +193,67 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnAttach.addEventListener('click', () => {
-    window.close();
+    chrome.windows.getAll({ windowTypes: ['normal'] }, (windows) => {
+      const targetWindow = windows && windows[0];
+      if (targetWindow && chrome.sidePanel && chrome.sidePanel.open) {
+        chrome.sidePanel.open({ windowId: targetWindow.id }).catch(() => {});
+      }
+      window.close();
+    });
   });
 
   btnReset.addEventListener('click', () => {
     if (confirm('Sicuro di voler eseguire un reset completo dell\'estensione? Verranno eliminati tutti i log, il nome del test e le impostazioni.')) {
       isPerformingUndoRedo = true;
-      chrome.storage.local.set({
-        isRecording: false,
-        testName: '',
-        assertionMode: null,
-        commentMode: false,
-        lastSelectedElementXPath: null
-      }, () => {
-        replaceAllEvents([], {
-          undoRedoState: {
-            history: [[]],
-            currentIndex: 0
-          }
-        }, () => {
-          isPerformingUndoRedo = false;
-          
-          // Reset local variables
-          isRecording = false;
-          recordedEvents = [];
-          assertionMode = null;
-          commentMode = false;
-          lastTextAssertionTarget = null;
-          history = [[]];
-          currentIndex = 0;
-          
-          // Reset inputs
-          if (testNameInput) testNameInput.value = '';
-          if (assertionTextInput) assertionTextInput.value = '';
-          if (commentInput) commentInput.value = '';
-          
-          // Update UI
-          updateStatusUI(false);
-          updateLogDisplay([]);
-          updateAssertionAndCommentContainers();
-          updateUndoRedoButtons();
-          updateButtonsState();
-          
-          alert('Estensione ripristinata allo stato iniziale!');
-        });
+      chrome.storage.local.get(null, (items) => {
+        const keysToRemove = Object.keys(items || {}).filter(k => k.startsWith('screenshot_'));
+        const finishStorageReset = () => {
+          chrome.storage.local.set({
+            isRecording: false,
+            testName: '',
+            assertionMode: null,
+            commentMode: false,
+            lastSelectedElementXPath: null
+          }, () => {
+            replaceAllEvents([], {
+              undoRedoState: {
+                history: [[]],
+                currentIndex: 0
+              }
+            }, () => {
+              isPerformingUndoRedo = false;
+              
+              // Reset local variables
+              isRecording = false;
+              recordedEvents = [];
+              assertionMode = null;
+              commentMode = false;
+              lastTextAssertionTarget = null;
+              history = [[]];
+              currentIndex = 0;
+              
+              // Reset inputs
+              if (testNameInput) testNameInput.value = '';
+              if (assertionTextInput) assertionTextInput.value = '';
+              if (commentInput) commentInput.value = '';
+              
+              // Update UI
+              updateStatusUI(false);
+              updateLogDisplay([]);
+              updateAssertionAndCommentContainers();
+              updateUndoRedoButtons();
+              updateButtonsState();
+              
+              alert('Estensione ripristinata allo stato iniziale!');
+            });
+          });
+        };
+
+        if (keysToRemove.length > 0) {
+          chrome.storage.local.remove(keysToRemove, finishStorageReset);
+        } else {
+          finishStorageReset();
+        }
       });
     }
   });
@@ -553,7 +570,8 @@ document.addEventListener('DOMContentLoaded', () => {
           const dataUrl = originalScreenshots[ts];
           const mime = (dataUrl.match(/^data:image\/([a-z+]+);/) || [])[1] || 'png';
           const ext = mime === 'jpeg' || mime === 'jpg' ? 'jpg' : 'png';
-          zip.file(`screenshots/screenshot_${ts}.${ext}`, dataUrl.split(',')[1], { base64: true });
+          const safeTs = ts.replace(/[:.]/g, '-');
+          zip.file(`screenshots/screenshot_${safeTs}.${ext}`, dataUrl.split(',')[1], { base64: true });
         });
 
         // 5. STORE: il base64 (JPEG/PNG) non comprime; DEFLATE brucia CPU VM
@@ -1033,17 +1051,71 @@ function updateAssertionBanner(xpath) {
 }
 
 
-// Helper to reliably query the active tab across side panel and detached windows
-function queryActiveTab(callback) {
-  chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
-    if (tabs && tabs[0] && tabs[0].id) {
-      callback(tabs[0]);
-    } else {
-      chrome.tabs.query({ active: true, currentWindow: true }, (fallback) => {
-        callback((fallback && fallback[0]) ? fallback[0] : null);
-      });
+// Track last focused normal browser window to reliably target the web page even when detached
+let lastNormalWindowId = null;
+
+if (typeof chrome !== 'undefined' && chrome.windows) {
+  chrome.windows.getAll({ windowTypes: ['normal'] }, (windows) => {
+    if (windows && windows.length > 0) {
+      lastNormalWindowId = windows[0].id;
     }
   });
+
+  if (chrome.windows.onFocusChanged) {
+    chrome.windows.onFocusChanged.addListener((windowId) => {
+      if (windowId !== chrome.windows.WINDOW_ID_NONE) {
+        chrome.windows.get(windowId, (win) => {
+          if (chrome.runtime.lastError || !win) return;
+          if (win.type === 'normal') {
+            lastNormalWindowId = win.id;
+          }
+        });
+      }
+    });
+  }
+}
+
+// Helper to reliably query the active tab across side panel and detached windows
+function queryActiveTab(callback) {
+  const isDetached = window.location.search.includes('mode=detached');
+
+  if (isDetached) {
+    const findTabInNormalWindows = () => {
+      chrome.windows.getAll({ populate: true, windowTypes: ['normal'] }, (windows) => {
+        if (windows && windows.length > 0) {
+          const targetWin = (lastNormalWindowId ? windows.find(w => w.id === lastNormalWindowId) : null) || windows[0];
+          const tab = (targetWin.tabs || []).find(t => t.active) || targetWin.tabs[0];
+          if (tab && tab.id) {
+            return callback(tab);
+          }
+        }
+        callback(null);
+      });
+    };
+
+    if (lastNormalWindowId) {
+      chrome.tabs.query({ active: true, windowId: lastNormalWindowId }, (tabs) => {
+        if (tabs && tabs[0] && tabs[0].id) {
+          callback(tabs[0]);
+        } else {
+          findTabInNormalWindows();
+        }
+      });
+    } else {
+      findTabInNormalWindows();
+    }
+  } else {
+    chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+      const tab = tabs && tabs[0];
+      if (tab && tab.id && tab.url && !tab.url.startsWith('chrome-extension://')) {
+        callback(tab);
+      } else {
+        chrome.tabs.query({ active: true, currentWindow: true }, (fallback) => {
+          callback((fallback && fallback[0]) ? fallback[0] : null);
+        });
+      }
+    });
+  }
 }
 
 // Submit a new Text Assertion
